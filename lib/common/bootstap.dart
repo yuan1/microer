@@ -1,0 +1,3 @@
+void checkOauth2Authorize(){
+
+}

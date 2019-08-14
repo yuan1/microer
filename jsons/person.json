@@ -1,0 +1,7 @@
+{
+  "id": 123,
+  "name": "John Smith",
+  "email": "john@example.com",
+  "mother":"$person",
+  "friends":"$[]person"
+}
