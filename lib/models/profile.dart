@@ -1,16 +1,28 @@
-import 'package:json_annotation/json_annotation.dart';
-import "user.dart";
-part 'profile.g.dart';
-@JsonSerializable()
 class Profile {
-Profile();
+  String token;
+  String code;
+  String uid;
+  var theme;
 
-User user;
-    String token;
-    String code;
-    String uid;
-    num theme;
-    
-factory Profile.fromJson(Map<String,dynamic> json) => _$ProfileFromJson(json);
-Map<String, dynamic> toJson() => _$ProfileToJson(this);
+  Profile(this.token, this.code, this.uid, this.theme);
+
+
+  Profile.fromJson(Map<String, dynamic> json)
+      : token = json['token'],
+        code = json['code'],
+        uid = json['uid'],
+        theme = json['theme'];
+
+  Map<String, dynamic> toJson() => {
+        'token': token,
+        'code': code,
+        'uid': uid,
+        'theme': theme,
+      };
+
+  @override
+  String toString() {
+    return 'Profile{token: $token, code: $code, uid: $uid, theme: $theme}';
+  }
+
 }

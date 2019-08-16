@@ -1,16 +1,21 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:microer/common/api.dart' as api;
+import 'package:microer/common/funs.dart';
+import 'package:microer/common/global.dart';
+import 'package:microer/common/logger.dart';
+import 'package:microer/common/notifier.dart';
+import 'package:microer/models/profile.dart';
 import 'package:microer/models/user.dart';
+import 'package:provider/provider.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:microer/common/api.dart' as api;
 
 const _client_id = '384854747';
 const _redirect_uri = 'https://javayuan.cn/microer.html';
+
+Profile _profile = Global.profile;
 
 class HomePage extends StatefulWidget {
   HomePage({Key key, this.title}) : super(key: key);
@@ -24,16 +29,13 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   StreamSubscription _sub;
-  SharedPreferences _prefs;
-  String _code;
-  String _token;
-  num _id;
+  int _selectedIndex = 0;
 
   @override
   initState() {
     super.initState();
-    initPlatformState();
-    _initInfo();
+    checkToken();
+    initPlatformStateForUriUniLinks();
   }
 
   @override
@@ -42,113 +44,61 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
-  void _initInfo() async {
-    _prefs = await SharedPreferences.getInstance();
-    _code = _prefs.getString('code') ?? null;
-    _token = _prefs.getString('token') ?? null;
-    _id = _prefs.getInt('id') ?? 0;
-    if (_token != null) {
-      _initTokenInfo();
-      _initUser();
-    }
-    print(_code);
-    print(_token);
-    print(_id);
-  }
-
-  void _initUser() {
-    api.usersShow(_token,_id).then((res) {
-      if (res.statusCode == 200) {
-        Map userMap = json.decode(res.body);
-        var user = new User.fromJson(userMap);
-        print(user.toJson());
-      }
+  // todo check error
+  void checkToken(){
+    print('check');
+    api.oauth2GetTokenInfo().then((res){
+      print('res');
+      Global.isLogin = true;
+    }).catchError((error){
+      Global.profile = Profile.fromJson({});
+      Global.user = User.fromJson({});
+      Global.isLogin= false;
     });
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  initPlatformState() async {
-    await initPlatformStateForUriUniLinks();
+  void _initUser() {
+    api.usersShow(_profile.uid).then((res) {
+      if (res.statusCode == 200) {
+        Map userMap = res.data;
+        print(userMap);
+      }
+    });
   }
 
   initPlatformStateForUriUniLinks() async {
     // Attach a listener to the Uri links stream
     _sub = getUriLinksStream().listen((Uri uri) {
-      print('got uri: ${uri?.queryParameters}');
       var code = uri?.queryParameters['code'];
       if (code != null) {
-        print('got code is $code');
-        _code = code;
-        _prefs.setString('code', code);
+        logger.d('got code $code ');
+        _profile.code = code;
         _initAccessToken();
       }
       closeWebView();
-      print('closed web view...');
     }, onError: (err) {
-      print('got err: $err');
+      logger.e('got err: $err');
     });
-  }
-
-  // 显示提示信息
-  void _displaySnackBar(String text) {
-    final snackBar = SnackBar(
-      content: Text(text),
-      duration: Duration(milliseconds: 500),
-    );
-    _scaffoldKey.currentState.showSnackBar(
-      snackBar,
-    );
-  }
-
-  void _showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false, //点击遮罩不关闭对话框
-      builder: (context) {
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              CircularProgressIndicator(),
-              Padding(
-                padding: EdgeInsets.only(top: 20.0),
-                child: Text("正在加载，请稍后..."),
-              )
-            ],
-          ),
-        );
-      },
-    );
   }
 
   // 获取高级授权
   void _initAccessToken() {
-    _displaySnackBar('开始获取高级授权');
+    showToast('开始获取高级授权');
     // 调取接口获取token
-    _showLoadingDialog();
-    api.oauth2AccessToken(_code).then((res) {
+    showLoading(context);
+    api.oauth2AccessToken(_profile.code).then((res) {
       Navigator.pop(context);
       if (res.statusCode == 200) {
-        _displaySnackBar('高级授权获取成功');
-        var body = jsonDecode(res.body);
+        showToast('高级授权获取成功');
+        var body = res.data;
         var token = body['access_token'];
-        print('token: $token');
-        _token = token;
-        _prefs.setString('token', token);
-        _initTokenInfo();
+        var uid = body['uid'];
+        _profile.token = token;
+        _profile.uid = uid;
+        logger.d(_profile);
+        Global.saveProfile();
       } else {
-        _displaySnackBar('高级授权获取失败,请重新授权, ${res.statusCode}');
-      }
-    });
-  }
-
-  void _initTokenInfo() {
-    api.oauth2GetTokenInfo(_token).then((res) {
-      if (res.statusCode == 200) {
-        var body = jsonDecode(res.body);
-        _id = body['uid'] ?? 0;
-        _prefs.setInt('id', _id);
-        print(_id);
+        showToast('高级授权获取失败,请重新授权, ${res.statusCode}');
       }
     });
   }
@@ -164,6 +114,16 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  void _onItemTapped(int index) {
+    showToast('test');
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  void openDrawer(){
+    _scaffoldKey.currentState.openDrawer();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,15 +132,35 @@ class _HomePageState extends State<HomePage>
         leading: new IconButton(
             icon: new Icon(Icons.menu),
             tooltip: 'Navigation menu',
-            onPressed: () => _displaySnackBar('test')),
+            onPressed:openDrawer),
         title: Text(widget.title),
         actions: <Widget>[
           new IconButton(
             icon: new Icon(Icons.search),
             tooltip: 'Search',
-            onPressed: () => _showLoadingDialog(),
+            onPressed: () => Navigator.pushNamed(context, "themes"),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            title: Text('Home'),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.business),
+            title: Text('Business'),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school),
+            title: Text('School'),
+          ),
+        ],
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
@@ -189,7 +169,7 @@ class _HomePageState extends State<HomePage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              'hello world:',
+              'hello world: $_selectedIndex',
             ),
             Text(
               '$_client_id',
@@ -198,6 +178,38 @@ class _HomePageState extends State<HomePage>
           ],
         ),
       ),
+      drawer: MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: ThemeModel()),
+          ],
+          child: Consumer<ThemeModel>(
+            builder:
+                (BuildContext context, ThemeModel themeModel, Widget child) {
+              return Drawer(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: <Widget>[
+                    DrawerHeader(
+                      child: Text('Drawer Header'),
+                      decoration: BoxDecoration(color: themeModel.theme),
+                    ),
+                    ListTile(
+                      title: Text('Item 1'),
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    ListTile(
+                      title: Text('Item 2'),
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          )),
       floatingActionButton: FloatingActionButton(
         onPressed: _launchOAuth2AuthorizeURL,
         tooltip: 'Increment',

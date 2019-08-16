@@ -1,9 +1,13 @@
-// 提供四套可选主题色
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:microer/models/profile.dart';
+import 'package:microer/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'http.dart' as http;
+import 'api.dart' as api;
+import 'logger.dart';
 
 const _themes = <MaterialColor>[
   Colors.blue,
@@ -11,13 +15,14 @@ const _themes = <MaterialColor>[
   Colors.teal,
   Colors.green,
   Colors.red,
+  Colors.pink
 ];
 
 class Global {
   static SharedPreferences _prefs;
-  static Profile profile = Profile();
-  // 网络缓存对象
-//  static NetCache netCache = NetCache();
+  static Profile profile;
+  static User user;
+  static bool isLogin;
 
   // 可选的主题列表
   static List<MaterialColor> get themes => _themes;
@@ -30,15 +35,25 @@ class Global {
     _prefs = await SharedPreferences.getInstance();
     var _profile = _prefs.getString("profile");
     if (_profile != null) {
-      try {
-        profile = Profile.fromJson(jsonDecode(_profile));
-      } catch (e) {
-        print(e);
-      }
+      profile = Profile.fromJson(jsonDecode(_profile));
+    } else {
+      profile = Profile.fromJson({});
     }
-  }
+    logger.d(profile);
 
+    var _user = _prefs.getString("user");
+    if(_user!=null){
+      user = User.fromJson(jsonDecode(_user));
+    }
+    logger.d(user);
+    // 初始化http
+   http.init();
+    // 检测token 是否过期
+  }
   // 持久化Profile信息
   static saveProfile() =>
       _prefs.setString("profile", jsonEncode(profile.toJson()));
+  // 持久化User信息
+  static saveUser() =>
+      _prefs.setString("user", jsonEncode(user.toJson()));
 }

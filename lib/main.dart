@@ -1,20 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:microer/routes/home.dart';
+import 'package:provider/provider.dart';
 
 import 'common/global.dart';
+import 'common/notifier.dart';
+import 'routes/theme.dart';
 
 void main() => Global.init().then((e) => runApp(MyApp()));
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Microer',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: HomePage(title: 'Microer Home'),
+    return MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: ThemeModel()),
+        ],
+        child: Consumer<ThemeModel>(
+            builder: (BuildContext context, ThemeModel themeModel,
+                Widget child) {
+              return MaterialApp(
+                title: 'Microer',
+                theme: ThemeData(
+                  primarySwatch: themeModel.theme
+                ),
+                home: HomePage(title: 'Microer Home'),
+                // 注册路由表
+                routes: <String, WidgetBuilder>{
+                  "themes": (context) => ThemePage(),
+                },
+              );
+            })
+
     );
   }
 }
