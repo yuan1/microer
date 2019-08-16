@@ -1,24 +1,24 @@
 class Profile {
+
   String token;
   String code;
   String uid;
-  var theme;
+  int theme;
 
-  Profile(this.token, this.code, this.uid, this.theme);
+  Profile.fromJsonMap(Map<String, dynamic> map):
+        token = map["token"],
+        code = map["code"],
+        uid = map["uid"],
+        theme = map["theme"];
 
-
-  Profile.fromJson(Map<String, dynamic> json)
-      : token = json['token'],
-        code = json['code'],
-        uid = json['uid'],
-        theme = json['theme'];
-
-  Map<String, dynamic> toJson() => {
-        'token': token,
-        'code': code,
-        'uid': uid,
-        'theme': theme,
-      };
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['token'] = token;
+    data['code'] = code;
+    data['uid'] = uid;
+    data['theme'] = theme;
+    return data;
+  }
 
   @override
   String toString() {

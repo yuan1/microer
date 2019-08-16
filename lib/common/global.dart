@@ -17,6 +17,9 @@ const _themes = <MaterialColor>[
   Colors.red,
   Colors.pink
 ];
+const _client_id = '384854747';
+const _redirect_uri = 'https://javayuan.cn/microer.html';
+const _client_secret = '16a73d2c899b47bc0062065603b7921c';
 
 class Global {
   static SharedPreferences _prefs;
@@ -27,6 +30,10 @@ class Global {
   // 可选的主题列表
   static List<MaterialColor> get themes => _themes;
 
+  static String get clientId => _client_id;
+  static String get clientSecret => _client_secret;
+  static String get redirectUri => _redirect_uri;
+
   // 是否为release版
   static bool get isRelease => bool.fromEnvironment("dart.vm.product");
 
@@ -35,15 +42,15 @@ class Global {
     _prefs = await SharedPreferences.getInstance();
     var _profile = _prefs.getString("profile");
     if (_profile != null) {
-      profile = Profile.fromJson(jsonDecode(_profile));
+      profile = Profile.fromJsonMap(jsonDecode(_profile));
     } else {
-      profile = Profile.fromJson({});
+      profile = Profile.fromJsonMap({});
     }
     logger.d(profile);
 
     var _user = _prefs.getString("user");
     if(_user!=null){
-      user = User.fromJson(jsonDecode(_user));
+      user = User.fromJsonMap(jsonDecode(_user));
     }
     logger.d(user);
     // 初始化http

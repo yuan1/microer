@@ -12,10 +12,6 @@ import 'package:provider/provider.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const _client_id = '384854747';
-const _redirect_uri = 'https://javayuan.cn/microer.html';
-
-Profile _profile = Global.profile;
 
 class HomePage extends StatefulWidget {
   HomePage({Key key, this.title}) : super(key: key);
@@ -51,14 +47,16 @@ class _HomePageState extends State<HomePage>
       print('res');
       Global.isLogin = true;
     }).catchError((error){
-      Global.profile = Profile.fromJson({});
-      Global.user = User.fromJson({});
+      print('check error');
+      Global.profile = Profile.fromJsonMap({});
+      Global.user = User.fromJsonMap({});
       Global.isLogin= false;
+      Global.saveProfile();
     });
   }
 
   void _initUser() {
-    api.usersShow(_profile.uid).then((res) {
+    api.usersShow(Global.profile.uid).then((res) {
       if (res.statusCode == 200) {
         Map userMap = res.data;
         print(userMap);
@@ -67,12 +65,11 @@ class _HomePageState extends State<HomePage>
   }
 
   initPlatformStateForUriUniLinks() async {
-    // Attach a listener to the Uri links stream
     _sub = getUriLinksStream().listen((Uri uri) {
       var code = uri?.queryParameters['code'];
       if (code != null) {
         logger.d('got code $code ');
-        _profile.code = code;
+        Global.profile.code = code;
         _initAccessToken();
       }
       closeWebView();
@@ -86,16 +83,16 @@ class _HomePageState extends State<HomePage>
     showToast('开始获取高级授权');
     // 调取接口获取token
     showLoading(context);
-    api.oauth2AccessToken(_profile.code).then((res) {
+    api.oauth2AccessToken(Global.profile.code).then((res) {
       Navigator.pop(context);
       if (res.statusCode == 200) {
         showToast('高级授权获取成功');
         var body = res.data;
         var token = body['access_token'];
         var uid = body['uid'];
-        _profile.token = token;
-        _profile.uid = uid;
-        logger.d(_profile);
+        Global.profile.token = token;
+        Global.profile.uid = uid;
+        logger.d(Global.profile);
         Global.saveProfile();
       } else {
         showToast('高级授权获取失败,请重新授权, ${res.statusCode}');
@@ -105,8 +102,8 @@ class _HomePageState extends State<HomePage>
 
   // 打开授权页面
   void _launchOAuth2AuthorizeURL() async {
-    const url =
-        'https://api.weibo.com/oauth2/authorize?client_id=$_client_id&redirect_uri=$_redirect_uri';
+    var url =
+        'https://api.weibo.com/oauth2/authorize?client_id=${Global.clientId}&redirect_uri=${Global.redirectUri}';
     if (await canLaunch(url)) {
       await launch(url, forceSafariVC: true);
     } else {
@@ -172,7 +169,7 @@ class _HomePageState extends State<HomePage>
               'hello world: $_selectedIndex',
             ),
             Text(
-              '$_client_id',
+              'huahua',
               style: Theme.of(context).textTheme.display1,
             ),
           ],
