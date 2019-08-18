@@ -6,7 +6,6 @@ import 'package:microer/models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'http.dart' as http;
-import 'api.dart' as api;
 import 'logger.dart';
 
 const _themes = <MaterialColor>[
@@ -31,7 +30,9 @@ class Global {
   static List<MaterialColor> get themes => _themes;
 
   static String get clientId => _client_id;
+
   static String get clientSecret => _client_secret;
+
   static String get redirectUri => _redirect_uri;
 
   // 是否为release版
@@ -47,20 +48,18 @@ class Global {
       profile = Profile.fromJsonMap({});
     }
     logger.d(profile);
-
+    http.init();
     var _user = _prefs.getString("user");
-    if(_user!=null){
+    if (_user != null) {
       user = User.fromJsonMap(jsonDecode(_user));
     }
     logger.d(user);
-    // 初始化http
-   http.init();
-    // 检测token 是否过期
   }
+
   // 持久化Profile信息
   static saveProfile() =>
       _prefs.setString("profile", jsonEncode(profile.toJson()));
+
   // 持久化User信息
-  static saveUser() =>
-      _prefs.setString("user", jsonEncode(user.toJson()));
+  static saveUser() => _prefs.setString("user", jsonEncode(user.toJson()));
 }

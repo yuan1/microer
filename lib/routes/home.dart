@@ -12,7 +12,6 @@ import 'package:provider/provider.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 class HomePage extends StatefulWidget {
   HomePage({Key key, this.title}) : super(key: key);
   final String title;
@@ -27,11 +26,15 @@ class _HomePageState extends State<HomePage>
   StreamSubscription _sub;
   int _selectedIndex = 0;
 
+  String name = Global.user.name ?? '';
+
+  String imgUrl = Global.user.profileImageUrl ?? '';
+
   @override
   initState() {
     super.initState();
-    checkToken();
     initPlatformStateForUriUniLinks();
+    checkToken();
   }
 
   @override
@@ -40,27 +43,32 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
-  // todo check error
-  void checkToken(){
-    print('check');
-    api.oauth2GetTokenInfo().then((res){
-      print('res');
+  void checkToken() {
+    api.oauth2GetTokenInfo().then((res) {
+      showToast('授权正常！');
       Global.isLogin = true;
-    }).catchError((error){
-      print('check error');
+      // 获取用户信息
+      _initUser();
+    }).catchError((error) {
+      showToast('授权过期！');
       Global.profile = Profile.fromJsonMap({});
       Global.user = User.fromJsonMap({});
-      Global.isLogin= false;
+      Global.isLogin = false;
       Global.saveProfile();
+      Global.saveUser();
     });
   }
 
   void _initUser() {
+    showLoading(context, '正在获取用户信息');
     api.usersShow(Global.profile.uid).then((res) {
-      if (res.statusCode == 200) {
-        Map userMap = res.data;
-        print(userMap);
-      }
+      Global.user = User.fromJsonMap(res.data);
+      showToast('欢迎，${Global.user.name}！');
+      Global.saveUser();
+      Navigator.pop(context);
+      setState(() {
+        name = Global.user.name;
+      });
     });
   }
 
@@ -94,6 +102,8 @@ class _HomePageState extends State<HomePage>
         Global.profile.uid = uid;
         logger.d(Global.profile);
         Global.saveProfile();
+        // 获取用户信息
+        _initUser();
       } else {
         showToast('高级授权获取失败,请重新授权, ${res.statusCode}');
       }
@@ -118,9 +128,10 @@ class _HomePageState extends State<HomePage>
     });
   }
 
-  void openDrawer(){
+  void openDrawer() {
     _scaffoldKey.currentState.openDrawer();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,7 +140,7 @@ class _HomePageState extends State<HomePage>
         leading: new IconButton(
             icon: new Icon(Icons.menu),
             tooltip: 'Navigation menu',
-            onPressed:openDrawer),
+            onPressed: openDrawer),
         title: Text(widget.title),
         actions: <Widget>[
           new IconButton(
@@ -166,10 +177,10 @@ class _HomePageState extends State<HomePage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              'hello world: $_selectedIndex',
+              'hello word : $_selectedIndex',
             ),
             Text(
-              'huahua',
+              name,
               style: Theme.of(context).textTheme.display1,
             ),
           ],
@@ -187,7 +198,7 @@ class _HomePageState extends State<HomePage>
                   padding: EdgeInsets.zero,
                   children: <Widget>[
                     DrawerHeader(
-                      child: Text('Drawer Header'),
+                      child: Image.network(imgUrl),
                       decoration: BoxDecoration(color: themeModel.theme),
                     ),
                     ListTile(

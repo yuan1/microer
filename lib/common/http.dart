@@ -7,29 +7,26 @@ import 'logger.dart';
 
 // 或者通过传递一个 `BaseOptions`来创建dio实例
 BaseOptions options = new BaseOptions(
-  baseUrl: "https://api.weibo.com",
-  connectTimeout: 5000,
-  receiveTimeout: 3000,
-  contentType: ContentType.parse("application/x-www-form-urlencoded")
-);
+    baseUrl: "https://api.weibo.com",
+    connectTimeout: 5000,
+    receiveTimeout: 3000,
+    contentType: ContentType.parse("application/x-www-form-urlencoded"));
 
-Dio dio = new Dio(options);
+var dio = new Dio(options);
 
 void init() {
   dio.interceptors.add(InterceptorsWrapper(onRequest: (RequestOptions options) {
-    if (Global.profile.token != null) {
-      switch (options.method) {
-        case 'GET':
-          options.queryParameters['access_token'] = Global.profile.token;
-          break;
-        case 'POST':
-          options.data['access_token'] = Global.profile.token;
-          break;
-        default:
-          print(options);
-      }
+    if (options.method == 'GET') {
+      options.queryParameters =  options.queryParameters ?? {};
+      options.queryParameters['access_token'] = Global.profile.token;
+    } else {
+      options.data =  options.data ?? {};
+      options.data['access_token'] = Global.profile.token;
     }
-    logger.d('http ${options.method} requeset is '+ options.data.toString());
+    logger.d('http ${options.method} requeset data ' +
+        options.data.toString() +
+        ' queryParameters ' +
+        options.queryParameters.toString());
     // 在请求被发送之前做一些事情
     return options; //continue
     // 如果你想完成请求并返回一些自定义数据，可以返回一个`Response`对象或返回`dio.resolve(data)`。
