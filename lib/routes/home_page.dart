@@ -8,6 +8,7 @@ import 'package:microer/common/logger.dart';
 import 'package:microer/common/notifier.dart';
 import 'package:microer/models/profile.dart';
 import 'package:microer/models/user.dart';
+import 'package:microer/widgets/status_list.dart';
 import 'package:provider/provider.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,15 +21,14 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage>{
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   StreamSubscription _sub;
   int _selectedIndex = 0;
 
-  String name = Global.user.name ?? '';
+  String name = Global.user?.name ?? "hello world";
 
-  String imgUrl = Global.user.profileImageUrl ?? '';
+  String imgUrl = Global.user?.profileImageUrl ?? "https://avatars1.githubusercontent.com/u/17492753?s=460&v=4";
 
   @override
   initState() {
@@ -132,6 +132,30 @@ class _HomePageState extends State<HomePage>
     _scaffoldKey.currentState.openDrawer();
   }
 
+  void _selectShowStatus() {
+    showModalBottomSheet(
+      context: context,
+      builder:  (_) => Container(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            ListTile(
+              title: Text('全部微博'),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: Text('我的微博'),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      )
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -139,9 +163,16 @@ class _HomePageState extends State<HomePage>
       appBar: AppBar(
         leading: new IconButton(
             icon: new Icon(Icons.menu),
-            tooltip: 'Navigation menu',
             onPressed: openDrawer),
-        title: Text(widget.title),
+        title: Row(
+          children: <Widget>[
+            Text(widget.title),
+            new IconButton(
+              icon: new Icon(Icons.arrow_drop_down),
+              onPressed: () => _selectShowStatus(),
+            ),
+          ],
+        ),
         actions: <Widget>[
           new IconButton(
             icon: new Icon(Icons.search),
@@ -153,16 +184,16 @@ class _HomePageState extends State<HomePage>
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            title: Text('Home'),
+            icon: Icon(Icons.timeline),
+            title: Text('timeline'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.business),
-            title: Text('Business'),
+            icon: Icon(Icons.question_answer),
+            title: Text('question_answer'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.school),
-            title: Text('School'),
+            icon: Icon(Icons.whatshot),
+            title: Text('whatshot'),
           ),
         ],
         showSelectedLabels: false,
@@ -170,22 +201,7 @@ class _HomePageState extends State<HomePage>
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'hello word : $_selectedIndex',
-            ),
-            Text(
-              name,
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
-        ),
-      ),
+      body: StatusList(),
       drawer: MultiProvider(
           providers: [
             ChangeNotifierProvider.value(value: ThemeModel()),
@@ -198,7 +214,10 @@ class _HomePageState extends State<HomePage>
                   padding: EdgeInsets.zero,
                   children: <Widget>[
                     DrawerHeader(
-                      child: Image.network(imgUrl),
+                      child: Image(
+                        image: NetworkImage(imgUrl),
+                        width: 100.0,
+                      ),
                       decoration: BoxDecoration(color: themeModel.theme),
                     ),
                     ListTile(
@@ -225,4 +244,5 @@ class _HomePageState extends State<HomePage>
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
 }

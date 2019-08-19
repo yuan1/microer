@@ -24,5 +24,8 @@ Future<Response> oauth2GetTokenInfo() async {
 Future<Response> usersShow(String id) async {
   return await dio.get('/2/users/show.json', queryParameters: {'uid': id});
 }
+Future<Response> homeTimeline() async {
+  return await dio.get('/2/statuses/home_timeline.json', queryParameters: {'count': 5});
+}
 
 

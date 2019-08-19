@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:microer/routes/home.dart';
+import 'package:microer/routes/home_page.dart';
 import 'package:provider/provider.dart';
 
 import 'common/global.dart';
 import 'common/notifier.dart';
-import 'routes/theme.dart';
-import 'common/http.dart' as http;
+import 'routes/theme_page.dart';
 
 void main() => Global.init().then((e) => runApp(MyApp()));
 
